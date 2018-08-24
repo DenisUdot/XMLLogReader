@@ -2,6 +2,8 @@ package denisudot.gmail.com;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
 
 public class InputLog {
 	private Date date;
@@ -21,14 +23,13 @@ public class InputLog {
 	}
 	
 	public String getData() {
-		SimpleDateFormat sd = new SimpleDateFormat("dd-MMMM-yyyy");
-		System.out.println(sd.format(date));
-		return sd.format(date);
+		SimpleDateFormat sd = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
+		sd.setTimeZone(TimeZone.getTimeZone("UTC"));
+		return sd.format(date).toUpperCase();
 	}
 	
 	public void setTimeStamp(long timestamp) {
 		date = new Date(timestamp);
-//		date.setTimeInMillis(timestamp);
 		System.out.println(date.toString());
 	}
 	

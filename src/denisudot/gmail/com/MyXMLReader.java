@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -28,19 +29,20 @@ public class MyXMLReader {
 	}
 
 	private void go() {
+		DirectoryReader.getInstance();
+	    File logList = DirectoryReader.getFile();
 		try{ 
-		     File userList = new File("src/file1.xml");
 		     DocumentBuilderFactory usersActivityFactory = DocumentBuilderFactory.newInstance();
 		     DocumentBuilder usersActivityBuilder = usersActivityFactory.newDocumentBuilder();
-		     Document inDoc = usersActivityBuilder.parse(userList);
+		     Document inDoc = usersActivityBuilder.parse(logList);
 		     
 		     inDoc.getDocumentElement().normalize();
-		     NodeList logList = inDoc.getElementsByTagName("log");
-		     int totalLogsNumbers = logList.getLength();
+		     NodeList log = inDoc.getElementsByTagName("log");
+		     int totalLogsNumbers = log.getLength();
 		     
 		     for (int i = 0; i < totalLogsNumbers; i++)
 		     {
-		        Node list = logList.item(i);   
+		        Node list = log.item(i);   
 		        if (list.getNodeType() == Node.ELEMENT_NODE)
 		        {
 		           Element information = (Element) list;
@@ -68,26 +70,25 @@ public class MyXMLReader {
 	
 	//save new xml
 	try {
-		File userList = new File("src/awg_file1.xml");
+		File userList = new File("awg_"+logList.getName());
         DocumentBuilderFactory dbFactory =  DocumentBuilderFactory.newInstance();
         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
         Document docOut = dBuilder.newDocument();
-        
-        // root element
-        Element rootElement = docOut.createElement("output");
-        docOut.appendChild(rootElement);
+        docOut.setXmlStandalone(true);
+       
+        // output element
+        Element output = docOut.createElement("output");
+        docOut.appendChild(output);
 
-        // logday element
-        Element logDay = docOut.createElement("logday");
-        rootElement.appendChild(logDay);
+        Element logday = docOut.createElement("logday");
+        output.appendChild(logday);
 
-        // setting attribute to element
         Element day = docOut.createElement("day");
-        logDay.appendChild(day);
+        logday.appendChild(day);
         day.appendChild(docOut.createTextNode(inputLogList.get(0).getData()));
  
         Element users = docOut.createElement("users");
-        day.appendChild(users);
+        logday.appendChild(users);
         
         for(int i = 0; i < inputLogList.size(); i++) {
         	Element user = docOut.createElement("user");
@@ -106,6 +107,10 @@ public class MyXMLReader {
         // write the content into xml file
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         Transformer transformer = transformerFactory.newTransformer();
+        transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        transformer.setOutputProperty(OutputKeys.DOCTYPE_PUBLIC, "yes");
+
         DOMSource source = new DOMSource(docOut);
         StreamResult result = new StreamResult(userList);
         transformer.transform(source, result);
