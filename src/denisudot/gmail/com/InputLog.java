@@ -22,7 +22,7 @@ public class InputLog {
 		return url;
 	}
 	
-	public String getData() {
+	public String getDate() {
 		SimpleDateFormat sd = new SimpleDateFormat("dd-MMM-yyyy", Locale.ENGLISH);
 		sd.setTimeZone(TimeZone.getTimeZone("UTC"));
 		return sd.format(date).toUpperCase();
@@ -30,22 +30,22 @@ public class InputLog {
 	
 	public void setTimeStamp(long timestamp) {
 		date = new Date(timestamp);
-		System.out.println(date.toString());
+//		System.out.println(date.toString());
 	}
 	
 	public void setSpentTime(long seconds) {
 		this.seconds = seconds;
-		System.out.println(seconds);
+//		System.out.println(seconds);
 	}
 	
 	public void setUserId(String userId) {
 		this.userId = userId;
-		System.out.println(userId);
+//		System.out.println(userId);
 	}
 	
 	public void setUrl(String url) {
 		this.url = url;
-		System.out.println(url);		
+//		System.out.println(url);		
 	}
 	
 	@Override

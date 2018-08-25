@@ -20,106 +20,130 @@ import org.w3c.dom.Element;
 
 import javax.xml.parsers.DocumentBuilder;
 
-public class MyXMLReader {
+public class MyXMLReader implements Runnable {
 	
-	private List<InputLog> inputLogList = new ArrayList<InputLog>();
+	private List<List<InputLog>> daysList;
+	private File fileName;
 	
-	public static void main(String[] args) {
-		new MyXMLReader().go();
+		public MyXMLReader(File filename) {
+		this.fileName = filename;
+//		System.out.println("///"+fileName.getName()+"///");
 	}
-
-	private void go() {
-		DirectoryReader.getInstance();
-	    File logList = DirectoryReader.getFile();
+		
+	public void run() {
+		daysList = new ArrayList<List<InputLog>>();
+		daysList.add(new ArrayList<InputLog>());
+	    readFile();
+	    writeFile();
+	}
+	
+	//read xml file
+	private void readFile() {
 		try{ 
 		     DocumentBuilderFactory usersActivityFactory = DocumentBuilderFactory.newInstance();
 		     DocumentBuilder usersActivityBuilder = usersActivityFactory.newDocumentBuilder();
-		     Document inDoc = usersActivityBuilder.parse(logList);
+		     Document inDoc = usersActivityBuilder.parse(fileName);
 		     
 		     inDoc.getDocumentElement().normalize();
 		     NodeList log = inDoc.getElementsByTagName("log");
 		     int totalLogsNumbers = log.getLength();
 		     
-		     for (int i = 0; i < totalLogsNumbers; i++)
-		     {
+		     for (int i = 0; i < totalLogsNumbers; i++){
 		        Node list = log.item(i);   
-		        if (list.getNodeType() == Node.ELEMENT_NODE)
-		        {
+		        if (list.getNodeType() == Node.ELEMENT_NODE){
 		           Element information = (Element) list;
-		           String timeStamp = information.getElementsByTagName("timestamp").item(0).getTextContent();
+		           long timeStamp = 1000*Long.parseLong(information.getElementsByTagName("timestamp").item(0).getTextContent());
 		           String userId = information.getElementsByTagName("userId").item(0).getTextContent();
 		           String url = information.getElementsByTagName("url").item(0).getTextContent();
-		           String seconds = information.getElementsByTagName("seconds").item(0).getTextContent();
-		           InputLog inputLog = new InputLog();
-		           inputLog.setTimeStamp(Long.parseLong(timeStamp));
-		           inputLog.setUserId(userId);
-		           inputLog.setUrl(url);
-		           inputLog.setSpentTime(Long.parseLong(seconds));
-		           inputLogList.add(inputLog);
-		           System.out.println();
+		           long seconds = Long.parseLong(information.getElementsByTagName("seconds").item(0).getTextContent());
+		           long j = 86400-((timeStamp/1000)%86400);
+		           if(j < seconds) {
+		        	   if(daysList.size() <= 1) {
+		        		   daysList.add(new ArrayList<InputLog>());
+		        	   }
+		        	   addlogToList(timeStamp, userId, url, j, daysList.get(0));
+		        	   addlogToList(timeStamp+(seconds*1000), userId, url, seconds-j, daysList.get(1));
+		           }
+		           else {
+		        	   addlogToList(timeStamp, userId, url, seconds, daysList.get(0));
+		           }
+			       System.out.println();
 		           }
 		        }
 		     }
 		     catch(Exception e){
 		        e.printStackTrace();
 		     }
+		
 	UserIdComparator userIdCompare = new UserIdComparator();
-	Collections.sort(inputLogList, userIdCompare);
-	System.out.println(inputLogList);
+	for(int i = 0; i < daysList.size(); i++) {
+	Collections.sort(daysList.get(i), userIdCompare);
 	
+//	System.out.println(daysList.get(i));
+		}
+	}
 	
-	//save new xml
-	try {
-		File userList = new File("awg_"+logList.getName());
-        DocumentBuilderFactory dbFactory =  DocumentBuilderFactory.newInstance();
-        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-        Document docOut = dBuilder.newDocument();
-        docOut.setXmlStandalone(true);
-       
-        // output element
-        Element output = docOut.createElement("output");
-        docOut.appendChild(output);
-
-        Element logday = docOut.createElement("logday");
-        output.appendChild(logday);
-
-        Element day = docOut.createElement("day");
-        logday.appendChild(day);
-        day.appendChild(docOut.createTextNode(inputLogList.get(0).getData()));
- 
-        Element users = docOut.createElement("users");
-        logday.appendChild(users);
-        
-        for(int i = 0; i < inputLogList.size(); i++) {
-        	Element user = docOut.createElement("user");
-        	users.appendChild(user);
-        	Element id = docOut.createElement("id");
-        	Element url = docOut.createElement("url");
-        	Element average = docOut.createElement("average");
-        	user.appendChild(id);
-        	user.appendChild(url);
-        	user.appendChild(average);
-        	id.appendChild(docOut.createTextNode(inputLogList.get(i).getUserId()));
-        	url.appendChild(docOut.createTextNode(inputLogList.get(i).getUrl()));
-        	average.appendChild(docOut.createTextNode(inputLogList.get(i).getAverage()));
-        }
-
-        // write the content into xml file
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer();
-        transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-        transformer.setOutputProperty(OutputKeys.DOCTYPE_PUBLIC, "yes");
-
-        DOMSource source = new DOMSource(docOut);
-        StreamResult result = new StreamResult(userList);
-        transformer.transform(source, result);
-        
-        // Output to console for testing
-        StreamResult consoleResult = new StreamResult(System.out);
-        transformer.transform(source, consoleResult);
-     } catch (Exception e) {
-        e.printStackTrace();
-     }
+	public void addlogToList(long timeStamp, String userId, String url, long seconds, List<InputLog> list) {
+		InputLog inputLog = new InputLog();
+        inputLog.setTimeStamp(timeStamp);
+        inputLog.setUserId(userId);
+        inputLog.setUrl(url);
+        inputLog.setSpentTime(seconds);
+        list.add(inputLog);
+	}
+	
+	private void writeFile() {
+		try {
+			File userList = new File("awg_"+fileName.getName());
+	        DocumentBuilderFactory dbFactory =  DocumentBuilderFactory.newInstance();
+	        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+	        Document docOut = dBuilder.newDocument();
+	        docOut.setXmlStandalone(true);
+	       
+	        // output element
+	        Element output = docOut.createElement("output");
+	        docOut.appendChild(output);
+	        
+	        for(int i = 0; i < daysList.size(); i++) {
+		        Element logday = docOut.createElement("logday");
+		        output.appendChild(logday);
+	
+		        Element day = docOut.createElement("day");
+		        logday.appendChild(day);
+		        day.appendChild(docOut.createTextNode(daysList.get(i).get(0).getDate()));
+		        Element users = docOut.createElement("users");
+		        logday.appendChild(users);
+		        
+		        for(int j = 0; j < daysList.get(i).size(); j++) {
+		        	Element user = docOut.createElement("user");
+		        	users.appendChild(user);
+		        	Element id = docOut.createElement("id");
+		        	Element url = docOut.createElement("url");
+		        	Element average = docOut.createElement("average");
+		        	user.appendChild(id);
+		        	user.appendChild(url);
+		        	user.appendChild(average);
+		        	id.appendChild(docOut.createTextNode(daysList.get(i).get(j).getUserId()));
+		        	url.appendChild(docOut.createTextNode(daysList.get(i).get(j).getUrl()));
+		        	average.appendChild(docOut.createTextNode(daysList.get(i).get(j).getAverage()));
+		        }
+	        }	
+	        // write the content into xml file
+	        TransformerFactory transformerFactory = TransformerFactory.newInstance();		        Transformer transformer = transformerFactory.newTransformer();
+		    transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+		    transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+		    transformer.setOutputProperty(OutputKeys.DOCTYPE_PUBLIC, "yes");
+		
+		    DOMSource source = new DOMSource(docOut);
+		    StreamResult result = new StreamResult(userList);
+		    transformer.transform(source, result);
+		        
+		    // Output to console for testing
+		    StreamResult consoleResult = new StreamResult(System.out);
+		    transformer.transform(source, consoleResult);
+		    } catch (Exception e) {
+		        e.printStackTrace();
+		    }
+		
 	}
 }

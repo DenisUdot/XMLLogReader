@@ -19,9 +19,8 @@ public final class DirectoryReader {
 	}
 	
 	private static void getFileList() {
-		//FilenameFilet return only xml file
 		//scr directory need to change
-		files = new File("src").listFiles(new FilenameFilter() {
+		files = new File("resources").listFiles(new FilenameFilter() {
 			@Override public boolean accept(File dir, String name) { 
 				return name.endsWith(".xml"); 
 				} 
@@ -31,6 +30,10 @@ public final class DirectoryReader {
 	
 	public static synchronized File getFile() {
 			i++;
-			return i < files.length ? files[i-1]: null;
+			return i <= files.length ? files[i-1]: null;
+	}
+	
+	public static int getNumbersOfFile() {
+		return files.length;
 	}
 }
