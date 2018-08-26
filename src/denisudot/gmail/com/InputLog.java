@@ -30,22 +30,18 @@ public class InputLog {
 	
 	public void setTimeStamp(long timestamp) {
 		date = new Date(timestamp);
-//		System.out.println(date.toString());
 	}
 	
 	public void setSpentTime(long seconds) {
 		this.seconds = seconds;
-//		System.out.println(seconds);
 	}
 	
 	public void setUserId(String userId) {
 		this.userId = userId;
-//		System.out.println(userId);
 	}
 	
 	public void setUrl(String url) {
-		this.url = url;
-//		System.out.println(url);		
+		this.url = url;		
 	}
 	
 	@Override

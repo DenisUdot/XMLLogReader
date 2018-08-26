@@ -24,32 +24,36 @@ public class MyXMLReader implements Runnable {
 	
 	private List<List<InputLog>> daysList;
 	private File fileName;
+	private String writingFolder;
 	
-		public MyXMLReader(File filename) {
+		public MyXMLReader(File filename, String writingFolder) {
 		this.fileName = filename;
-//		System.out.println("///"+fileName.getName()+"///");
+		this.writingFolder = writingFolder;
 	}
 		
 	public void run() {
+//		name for testing threads
+//		Thread.currentThread().setName(fileName.getName());
+//	    System.out.println("Thread work with file: "+Thread.currentThread().getName());
 		daysList = new ArrayList<List<InputLog>>();
 		daysList.add(new ArrayList<InputLog>());
 	    readFile();
 	    writeFile();
+	    
 	}
 	
-	//read xml file
 	private void readFile() {
 		try{ 
 		     DocumentBuilderFactory usersActivityFactory = DocumentBuilderFactory.newInstance();
 		     DocumentBuilder usersActivityBuilder = usersActivityFactory.newDocumentBuilder();
-		     Document inDoc = usersActivityBuilder.parse(fileName);
-		     
+		     Document inDoc = usersActivityBuilder.parse(fileName);	     
 		     inDoc.getDocumentElement().normalize();
 		     NodeList log = inDoc.getElementsByTagName("log");
 		     int totalLogsNumbers = log.getLength();
 		     
 		     for (int i = 0; i < totalLogsNumbers; i++){
 		        Node list = log.item(i);   
+		        
 		        if (list.getNodeType() == Node.ELEMENT_NODE){
 		           Element information = (Element) list;
 		           long timeStamp = 1000*Long.parseLong(information.getElementsByTagName("timestamp").item(0).getTextContent());
@@ -57,6 +61,7 @@ public class MyXMLReader implements Runnable {
 		           String url = information.getElementsByTagName("url").item(0).getTextContent();
 		           long seconds = Long.parseLong(information.getElementsByTagName("seconds").item(0).getTextContent());
 		           long j = 86400-((timeStamp/1000)%86400);
+		           
 		           if(j < seconds) {
 		        	   if(daysList.size() <= 1) {
 		        		   daysList.add(new ArrayList<InputLog>());
@@ -67,19 +72,18 @@ public class MyXMLReader implements Runnable {
 		           else {
 		        	   addlogToList(timeStamp, userId, url, seconds, daysList.get(0));
 		           }
-			       System.out.println();
+			       
 		           }
 		        }
 		     }
-		     catch(Exception e){
-		        e.printStackTrace();
-		     }
-		
-	UserIdComparator userIdCompare = new UserIdComparator();
-	for(int i = 0; i < daysList.size(); i++) {
-	Collections.sort(daysList.get(i), userIdCompare);
-	
-//	System.out.println(daysList.get(i));
+		catch(Exception e){
+			e.printStackTrace();
+		}
+		UserIdComparator userIdCompare = new UserIdComparator();
+
+		for(int i = 0; i < daysList.size(); i++) {
+			Collections.sort(daysList.get(i), userIdCompare);
+//			System.out.println(daysList.get(i));
 		}
 	}
 	
@@ -93,17 +97,19 @@ public class MyXMLReader implements Runnable {
 	}
 	
 	private void writeFile() {
+		if(!new File(writingFolder).exists()){
+			new File(writingFolder).mkdir();
+		}
 		try {
-			File userList = new File("awg_"+fileName.getName());
+			File userList = new File(writingFolder+"/awg_"+fileName.getName());
 	        DocumentBuilderFactory dbFactory =  DocumentBuilderFactory.newInstance();
 	        DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 	        Document docOut = dBuilder.newDocument();
 	        docOut.setXmlStandalone(true);
-	       
-	        // output element
+	        
 	        Element output = docOut.createElement("output");
 	        docOut.appendChild(output);
-	        
+	  
 	        for(int i = 0; i < daysList.size(); i++) {
 		        Element logday = docOut.createElement("logday");
 		        output.appendChild(logday);
@@ -128,7 +134,7 @@ public class MyXMLReader implements Runnable {
 		        	average.appendChild(docOut.createTextNode(daysList.get(i).get(j).getAverage()));
 		        }
 	        }	
-	        // write the content into xml file
+	      
 	        TransformerFactory transformerFactory = TransformerFactory.newInstance();		        Transformer transformer = transformerFactory.newTransformer();
 		    transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
 		    transformer.setOutputProperty(OutputKeys.INDENT, "yes");
@@ -138,12 +144,13 @@ public class MyXMLReader implements Runnable {
 		    StreamResult result = new StreamResult(userList);
 		    transformer.transform(source, result);
 		        
-		    // Output to console for testing
-		    StreamResult consoleResult = new StreamResult(System.out);
-		    transformer.transform(source, consoleResult);
+// 			Output to console for testing
+//		    StreamResult consoleResult = new StreamResult(System.out);
+//		    transformer.transform(source, consoleResult);
 		    } catch (Exception e) {
 		        e.printStackTrace();
 		    }
+		System.out.println("File "+fileName+" convertion complite");
 		
 	}
 }

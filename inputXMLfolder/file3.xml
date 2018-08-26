@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<input>
+   <log>
+       <timestamp>1455839970</timestamp>
+       <userId>user1</userId>
+       <url>http://ru.wikipedia.org</url>
+       <seconds>100</seconds>
+   </log>
+</input>
